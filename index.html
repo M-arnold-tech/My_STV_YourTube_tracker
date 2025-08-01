@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnTube: Learning Tracker</title>
+    <!-- Tailwind CSS for modern, responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Using the Inter font for a clean, modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e5e7eb;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #9ca3af;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col items-center">
+    <!-- Main container with a card-like layout -->
+    <div class="bg-white p-6 md:p-10 rounded-3xl shadow-2xl max-w-5xl w-full">
+
+        <!-- Header -->
+        <h1 class="text-4xl md:text-5xl font-bold text-center text-gray-800 mb-6">
+            LearnTube <span class="text-blue-600">Pro</span>
+        </h1>
+        <p class="text-center text-gray-500 mb-8">Improve your learning with curated YouTube videos.</p>
+
+        <!-- Search Section -->
+        <div class="flex flex-col sm:flex-row items-center gap-4 mb-8">
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Search for a topic (e.g., 'React tutorial')" 
+                class="flex-1 w-full px-5 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            />
+            <button 
+                id="searchButton"
+                class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transform transition-transform duration-200 ease-in-out active:scale-95"
+            >
+                Search
+            </button>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden text-center text-gray-500 my-8">
+            <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="mt-2 text-lg">Searching for videos...</p>
+        </div>
+
+        <!-- My Watched Videos Section -->
+        <div id="watchedVideosSection" class="mb-8 hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">My Watched Videos</h2>
+            <div id="watchedVideosContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Watched video items will be injected here -->
+            </div>
+        </div>
+
+        <!-- Search Results Section -->
+        <div>
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Search Results</h2>
+            <div id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Search results will be injected here -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- The main application script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // YOUR YOUTUBE API KEY GOES HERE.
+            // A 403 error means your key is missing or invalid.
+            // For a production app, this key should be handled on a server.
+            const YOUTUBE_API_KEY = "AIzaSyCiZxV9nExzncS3vhsyBb6a6PZdvxUArGI";
+            const API_URL = 'https://www.googleapis.com/youtube/v3/search';
+
+            // Caching DOM elements for efficiency
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const watchedVideosContainer = document.getElementById('watchedVideosContainer');
+            const watchedVideosSection = document.getElementById('watchedVideosSection');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+
+            /**
+             * Fetches and displays YouTube videos based on the search query.
+             */
+            const searchCourses = async () => {
+                const query = searchInput.value.trim();
+                if (!query) return;
+
+                // Show loading state and clear previous results
+                loadingIndicator.classList.remove('hidden');
+                resultsContainer.innerHTML = '';
+                
+                try {
+                    const response = await fetch(`${API_URL}?key=${YOUTUBE_API_KEY}&q=${encodeURIComponent(query + ' tutorial')}&part=snippet&maxResults=20&type=video`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    
+                    // Hide loading state
+                    loadingIndicator.classList.add('hidden');
+                    
+                    if (data.items.length === 0) {
+                        resultsContainer.innerHTML = '<p class="text-center text-gray-500">No videos found. Try a different search term.</p>';
+                        return;
+                    }
+                    
+                    // Render the new search results
+                    data.items.forEach(item => {
+                        const video = {
+                            id: item.id.videoId,
+                            title: item.snippet.title,
+                            thumbnail: item.snippet.thumbnails.high.url,
+                            channelTitle: item.snippet.channelTitle
+                        };
+                        const videoCard = createVideoCard(video, false); // `false` indicates it's a search result
+                        resultsContainer.appendChild(videoCard);
+                    });
+                } catch (error) {
+                    loadingIndicator.classList.add('hidden');
+                    resultsContainer.innerHTML = `<p class="text-center text-red-500">Error: ${error.message}</p>`;
+                    console.error('Failed to fetch from YouTube API:', error);
+                }
+            };
+            
+            /**
+             * Creates a single video card element for display.
+             * @param {object} video - The video data object.
+             * @param {boolean} isWatched - True if the video is from the watched list.
+             * @returns {HTMLElement} The created video card element.
+             */
+            const createVideoCard = (video, isWatched) => {
+                const card = document.createElement('div');
+                card.className = "bg-gray-50 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow flex flex-col h-full";
+                card.innerHTML = `
+                    <a href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener noreferrer" class="block flex-shrink-0">
+                        <img src="${video.thumbnail}" alt="Video thumbnail" class="w-full h-auto object-cover">
+                    </a>
+                    <div class="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2 leading-tight">
+                                <a href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 transition-colors">${video.title}</a>
+                            </h3>
+                            <p class="text-sm text-gray-500 mb-4">${video.channelTitle}</p>
+                        </div>
+                        ${isWatched
+                            ? `<button data-video-id="${video.id}" class="remove-watched-btn mt-auto w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transform transition-transform duration-200 ease-in-out active:scale-95">Remove</button>`
+                            : `<button data-video-id="${video.id}" data-title="${video.title.replace(/"/g, '&quot;')}" data-thumbnail="${video.thumbnail}" data-channel="${video.channelTitle}" class="mark-watched-btn mt-auto w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transform transition-transform duration-200 ease-in-out active:scale-95">Mark as Watched</button>`
+                        }
+                    </div>
+                `;
+                return card;
+            };
+
+            /**
+             * Saves a video to local storage and re-renders the watched list.
+             * @param {object} video - The video data to save.
+             */
+            const saveWatchedVideo = (video) => {
+                let watchedVideos = JSON.parse(localStorage.getItem('watchedVideos')) || [];
+                // Check if the video is already in the list
+                if (!watchedVideos.some(v => v.id === video.id)) {
+                    watchedVideos.push(video);
+                    localStorage.setItem('watchedVideos', JSON.stringify(watchedVideos));
+                    renderWatchedVideos();
+                }
+            };
+            
+            /**
+             * Removes a video from local storage and re-renders the watched list.
+             * @param {string} videoId - The ID of the video to remove.
+             */
+            const removeWatchedVideo = (videoId) => {
+                let watchedVideos = JSON.parse(localStorage.getItem('watchedVideos')) || [];
+                watchedVideos = watchedVideos.filter(video => video.id !== videoId);
+                localStorage.setItem('watchedVideos', JSON.stringify(watchedVideos));
+                renderWatchedVideos();
+            };
+
+            /**
+             * Renders the list of watched videos from local storage.
+             */
+            const renderWatchedVideos = () => {
+                const watchedVideos = JSON.parse(localStorage.getItem('watchedVideos')) || [];
+                watchedVideosContainer.innerHTML = '';
+                
+                if (watchedVideos.length > 0) {
+                    watchedVideosSection.classList.remove('hidden');
+                    watchedVideos.forEach(video => {
+                        const videoCard = createVideoCard(video, true); // `true` indicates it's a watched video
+                        watchedVideosContainer.appendChild(videoCard);
+                    });
+                } else {
+                    watchedVideosSection.classList.add('hidden');
+                }
+            };
+
+            // Event listener for the search button
+            searchButton.addEventListener('click', searchCourses);
+            searchInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    searchCourses();
+                }
+            });
+
+            // Using event delegation for the 'Mark as Watched' buttons
+            resultsContainer.addEventListener('click', (event) => {
+                if (event.target.classList.contains('mark-watched-btn')) {
+                    const button = event.target;
+                    const video = {
+                        id: button.dataset.videoId,
+                        title: button.dataset.title,
+                        thumbnail: button.dataset.thumbnail,
+                        channelTitle: button.dataset.channel
+                    };
+                    saveWatchedVideo(video);
+                    // Provide visual feedback
+                    button.textContent = 'Added!';
+                    button.disabled = true;
+                    button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    button.classList.add('bg-green-500', 'cursor-not-allowed');
+                }
+            });
+
+            // Using event delegation for the 'Remove' buttons
+            watchedVideosContainer.addEventListener('click', (event) => {
+                if (event.target.classList.contains('remove-watched-btn')) {
+                    const videoId = event.target.dataset.videoId;
+                    removeWatchedVideo(videoId);
+                }
+            });
+
+            // Initial render of watched videos when the page loads
+            renderWatchedVideos();
+        });
+    </script>
+</body>
+</html>
