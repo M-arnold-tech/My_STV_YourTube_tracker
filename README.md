@@ -21,7 +21,7 @@ To build the Docker image locally:
 docker build -t learntube_tracker:latest learntube_trackerr:latest
 Tag and push to Docker Hub:
 docker tag docker tag learntube_tracker:latest arnold/learntube_tracker:latest
-docker push docker push logger12/fdtracker:latest
+docker push docker push arnold/learntube_tracker:latest
 Run Instructions (Web01 & Web02)
 On Web01 and Web02:
 
@@ -68,5 +68,6 @@ cd My_STV_Youtube_traccker
 Developed by:
 
 Arnold Mugabo
+
 
 
