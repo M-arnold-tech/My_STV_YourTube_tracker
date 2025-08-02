@@ -62,12 +62,13 @@ An internet connection to fetch course expiry tracker from Youtube/v3 API
 git clone https://github.com/M-arnold-tech/My_STV_YourTube_tracker.git)
 cd My_STV_Youtube_traccker
 
-# Demo vedio (Youtube_link)
+### 2. Demo vedio (Youtube_link)
 
 
 Developed by:
 
 Arnold Mugabo
+
 
 
 
