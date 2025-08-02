@@ -55,6 +55,8 @@ An internet connection to fetch course expiry tracker from Youtube/v3 API
 - [YouTube Data API v3](https://developers.google.com/youtube/v3)
 
 ---
+### 2. Demo vedio (Youtube_link)
+
 
 ##  Local Setup
 ### 1. Clone this repo
@@ -62,12 +64,8 @@ An internet connection to fetch course expiry tracker from Youtube/v3 API
 git clone https://github.com/M-arnold-tech/My_STV_YourTube_tracker.git)
 cd My_STV_Youtube_traccker
 
-### 2. Demo vedio (Youtube_link)
 
 
-Developed by:
-
-Arnold Mugabo
 
 
 
